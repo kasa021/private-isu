@@ -1,1 +1,1 @@
-cat ../log/nginx/access.log | alp json
+cat ./log/nginx/access.log | alp json
