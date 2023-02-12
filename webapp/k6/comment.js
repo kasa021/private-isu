@@ -1,6 +1,5 @@
 import http from 'k6/http';
 import {check} from 'k6';
-import {BASE_URL} from './config.js';
 import {ACCOUNT_NAME, ACCOUNT_PASSWORD,url} from './config.js';
 import {parseHTML} from 'k6/html';
 
@@ -8,7 +7,7 @@ const testImage = open('./test.png', 'b');
 
 
 export default function () {
-  const loginRes = http.post(url('/login'),{
+  const loginRes = http.post(url('/login'),{  
     account_name: ACCOUNT_NAME,
     password: ACCOUNT_PASSWORD,
   });

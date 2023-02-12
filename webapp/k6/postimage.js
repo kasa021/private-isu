@@ -17,10 +17,13 @@ export default function () {
   });
 
   const res = http.get(url(`/@${ACCOUNT_NAME}`));
-
+  //console.log(res.body);
   const doc = parseHTML(res.body);
+  //console.log(doc);
   const token= doc.find("input[name=csrf_token]").first().attr("value");
+  //console.log(token);
   const post_id = doc.find("input[name=post_id]").first().attr("value");
+  //console.log(post_id);
 
   const comment_res = http.post(url(`/comment`),{
     post_id: post_id,
