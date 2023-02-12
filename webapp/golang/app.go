@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"regexp"
 	"strconv"
@@ -186,12 +185,27 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			return nil, err
 		}
 
-		for i := 0; i < len(comments); i++ {
-			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
-			if err != nil {
-				return nil, err
-			}
-		}
+		var users []User
+
+        if len(comments) > 0 {
+            user_ids := make([]int, len(comments))
+
+            for i := 0; i < len(comments); i++ {
+                user_ids[i] = comments[i].UserID
+            }
+
+            sql := "SELECT * FROM `users` WHERE `id` IN (?)"
+
+            sql, params, err := sqlx.In(sql, user_ids)
+            if err != nil {
+                return nil, err
+            }
+
+            err = db.Select(&users, sql, params...)
+            if err != nil {
+                return nil, err
+            }
+        }
 
 		// reverse
 		for i, j := 0, len(comments)-1; i < j; i, j = i+1, j-1 {
