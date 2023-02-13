@@ -109,13 +109,6 @@ func validateUser(accountName, password string) bool {
 		regexp.MustCompile(`\A[0-9a-zA-Z_]{6,}\z`).MatchString(password)
 }
 
-// 今回のGo実装では言語側のエスケープの仕組みが使えないのでOSコマンドインジェクション対策できない
-// 取り急ぎPHPのescapeshellarg関数を参考に自前で実装
-// cf: http://jp2.php.net/manual/ja/function.escapeshellarg.php
-func escapeshellarg(arg string) string {
-	return "'" + strings.Replace(arg, "'", "'\\''", -1) + "'"
-}
-
 func digest(src string) string {
 	hash := sha512.New()
 	io.WriteString(hash, src)
@@ -187,25 +180,25 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		var users []User
 
-        if len(comments) > 0 {
-            user_ids := make([]int, len(comments))
+		if len(comments) > 0 {
+			user_ids := make([]int, len(comments))
 
-            for i := 0; i < len(comments); i++ {
-                user_ids[i] = comments[i].UserID
-            }
+			for i := 0; i < len(comments); i++ {
+				user_ids[i] = comments[i].UserID
+			}
 
-            sql := "SELECT * FROM `users` WHERE `id` IN (?)"
+			sql := "SELECT * FROM `users` WHERE `id` IN (?)"
 
-            sql, params, err := sqlx.In(sql, user_ids)
-            if err != nil {
-                return nil, err
-            }
+			sql, params, err := sqlx.In(sql, user_ids)
+			if err != nil {
+				return nil, err
+			}
 
-            err = db.Select(&users, sql, params...)
-            if err != nil {
-                return nil, err
-            }
-        }
+			err = db.Select(&users, sql, params...)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		// reverse
 		for i, j := 0, len(comments)-1; i < j; i, j = i+1, j-1 {
@@ -801,7 +794,7 @@ func postAdminBanned(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin/banned", http.StatusFound)
 }
 
-func main() {
+func ConnectDb() *sqlx.DB {
 	host := os.Getenv("ISUCONP_DB_HOST")
 	if host == "" {
 		host = "localhost"
@@ -833,10 +826,14 @@ func main() {
 		dbname,
 	)
 
-	db, err = sqlx.Open("mysql", dsn)
+	db, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
-		log.Fatalf("Failed to connect to DB: %s.", err.Error())
+		log.Fatalf("Failed to connect to DB.\nError: %s", err.Error())
 	}
+	return db
+}
+func main() {
+	db := ConnectDb()
 	defer db.Close()
 
 	r := chi.NewRouter()
@@ -851,7 +848,7 @@ func main() {
 	r.Get("/posts", getPosts)
 	r.Get("/posts/{id}", getPostsID)
 	r.Post("/", postIndex)
-	r.Get("/image/{id}.{ext}", getImage)		
+	r.Get("/image/{id}.{ext}", getImage)
 	r.Post("/comment", postComment)
 	r.Get("/admin/banned", getAdminBanned)
 	r.Post("/admin/banned", postAdminBanned)
