@@ -1,10 +1,10 @@
 services:
   nginx:
-    image: nginx:1.22
+    build: etc/nginx/
     volumes:
       - ./etc/nginx/conf.d:/etc/nginx/conf.d
       - ./public:/public
-      - ./log/nginx:/var/log/nginx
+      - ./logs/nginx:/var/log/nginx
     ports:
       - "80:80"
     links:
@@ -24,13 +24,15 @@ services:
       - mysql
       - memcached
     volumes:
-      - ./public:/home/public
+      - ./public/image:/home/webapp/public
     init: true
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 1g
+    depends_on:
+      - mysql
 
   mysql:
     image: mysql:8.0
@@ -42,13 +44,13 @@ services:
       - mysql:/var/lib/mysql
       - ./etc/my.cnf:/etc/my.cnf
       - ./sql:/docker-entrypoint-initdb.d
-      - ./log/mysql:/var/log/mysql
+      - ./logs/mysql:/var/log/mysql
     ports:
       - "3306:3306"
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 1g
 
   memcached:
